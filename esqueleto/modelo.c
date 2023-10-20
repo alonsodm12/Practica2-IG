@@ -468,9 +468,9 @@ void Dibuja (void)
   SuperficieRevolucion alonsopep("lata-pinf.ply",70);
   alonsopep.drawSMOOTH();
   */
-
+glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color2);
  SuperficieRevolucion peon("perfil_cerrado.ply",70);
- peon.drawFLAT();
+ peon.drawSMOOTH();
   glTranslatef(10,0,0);
   
   glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color3);
