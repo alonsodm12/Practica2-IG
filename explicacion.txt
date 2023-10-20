@@ -1,0 +1,61 @@
+1. vamos a leer un modelo que viene en un archivo
+leemos el modelo [listas de vertices y de ]
+
+2. generar la geometria con un algoritmo
+ 
+3. crear una poligonal y darle vueltas
+
+4. crearemos funcion para calcular la normal
+
+5. crearemos escenas 
+
+6.nos van a dar tanto vertices como lados en estructuras de datos
+
+7. para calcular las normales usaremos el producto vectorial si generamos ods vectores que estan en el plano del poligo si hacemos producto vectorial nos da una perpendicular 
+
+
+
+Para calcular las normales del vertice:
+
+vector perpendicular al plano en el que esta la cara
+
+Le decimos que calcula la iluminacion en los vertices eso nos va a dar la sensacion de que estamos viendo una capa,--->iluminacion de cada vertice---> la normal
+
+
+******************cogemos las 5 normales las sumamos y normalizamos**************************
+
+SOPA DE TRIANGULOS
+
+Como calculamos aqui las normales
+
+cada triangulo tiene sus tres vertices como calcilamos las normales de cada vertice
+
+sumas todas
+calculas la suma de las normales de las caras que comparten el vertice
+
+Forma eficiente de calcular
+
+for vertice
+	for cara
+		if caracuer
+		
+	//lo de arriba no es muy buena idea poco eficiente
+		recorremos todas las caras y para cara recorremos todos los vertices 
+			normal vertice+=normal cara
+			
+		for cara
+			for vertice
+				nv+=nc
+			for vertice calcular el modulo normalizamos el vector
+			
+			
+Formato ply
+
+respuesta pregunta
+
+1.si
+2.
+3.
+				
+			
+		
