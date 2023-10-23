@@ -462,7 +462,7 @@ void Dibuja (void)
   */
  
   glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color2);
-  SuperficieRevolucion peon("./Archivos.ply/perfil_cerrado.ply",68);
+  SuperficieRevolucion peon("./Archivos.ply/perfil_cerrado.ply",67);
   peon.drawSMOOTH();
   glTranslatef(7,0,0);
   
