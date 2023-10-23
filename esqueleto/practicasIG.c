@@ -62,7 +62,7 @@ int main (int argc, char *argv[])
   glutInitWindowPosition (0, 0);
   glutInitWindowSize (800, 800);
   glutInitDisplayMode (GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-  glutCreateWindow ("IG. Curso 2022/23. Autor: ESCRIBE AQUÍ TU NOMBRE");
+  glutCreateWindow ("IG. Curso 2022/23. Autor: Alonso Doña Martinez");
 
 // Inicializa las variables del modelo
   initModel ();

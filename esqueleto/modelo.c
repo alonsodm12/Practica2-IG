@@ -86,7 +86,7 @@ class mallaVirtual : Objeto3D
   public:
     int numero_vertices;
     int numero_triangulos;
-    std::vector < std::vector<float> >vertice;
+    std::vector < std::vector<float> >vertices;
     std::vector < std::vector<int> >caras;
     std::vector <std::vector<float>> normal_vertice;
     std::vector <std::vector<float>> normal_cara;
@@ -123,8 +123,8 @@ class mallaVirtual : Objeto3D
 
         //Calculamos el vector
         for(int j=0;j<3;j++){
-          vector1[j]= vertice[vertice2][j]-vertice[vertice1][j];
-          vector2[j] = vertice[vertice3][j]-vertice[vertice1][j];
+          vector1[j]= vertices[vertice2][j]-vertices[vertice1][j];
+          vector2[j] = vertices[vertice3][j]-vertices[vertice1][j];
         }
         
         //Calculamos el producto vectorial de los vectores vector1 y vector2
@@ -160,20 +160,6 @@ class mallaVirtual : Objeto3D
           
         }
 
-/*
-        normal_vertice[vertice1][0]+=normal_cara[i][0];
-        normal_vertice[vertice1][1]+=normal_cara[i][1];
-        normal_vertice[vertice1][2]+=normal_cara[i][2];
-
-        normal_vertice[vertice2][0]+=normal_cara[i][0];
-        normal_vertice[vertice2][1]+=normal_cara[i][1];
-        normal_vertice[vertice2][2]+=normal_cara[i][2];
-
-
-        normal_vertice[vertice3][0]+=normal_cara[i][0];
-        normal_vertice[vertice3][1]+=normal_cara[i][1];
-        normal_vertice[vertice3][2]+=normal_cara[i][2];
-*/
   }
     //Para cada vertice normalizamos su normal seguimos los mismos pasos que antes
     for(int j=0;j<numero_vertices;j++){
@@ -193,7 +179,7 @@ class mallaVirtual : Objeto3D
 
 class SuperficieRevolucion:mallaVirtual
 {
-  std::vector <float> vertices;
+  std::vector <float> vertices_ply;
   int num_copias=0;
 
   public:
@@ -204,7 +190,7 @@ class SuperficieRevolucion:mallaVirtual
       exit;
 
     num_copias=numeroCopias;
-    ply::read_vertices(nombre_archivo_pse,vertices);
+    ply::read_vertices(nombre_archivo_pse,vertices_ply);
 
     generarObjetoPorRevolucion();
   }
@@ -220,23 +206,25 @@ class SuperficieRevolucion:mallaVirtual
     //cada instancia del perfil forma un angulo de 2pi/(n-1)rad con la siguiente o anterior
 
     //Ajustamos el tamaño de cada uno
-    caras.resize((  (vertices.size()/3-1)*(num_copias-1))*2,std::vector<int>(3));
-    vertice.resize((vertices.size()/3)*num_copias,std::vector<float>(3));
+    //ultimo vertice no se accede y num_copias no se accede a la ultima porque es igual q la primera
+    caras.resize((  (vertices_ply.size()/3-1)*(num_copias-1))*2,std::vector<int>(3));
+    vertices.resize((vertices_ply.size()/3)*num_copias,std::vector<float>(3));
     
     for(int i=0;i<num_copias;i++){
       
-      int l=0;
-      for(int j=0;j<vertices.size()/3;j++){
+      int contador=0;
+      for(int j=0;j<vertices_ply.size()/3;j++){
         float angulo = 2*M_PI*i / (num_copias-1);
         
-        float coordenadaX=vertices[j+l]*cos(angulo);
-        float coordenadaY=vertices[j+1+l];
-        float coordenadaZ=-vertices[j+l]*sin(angulo);
-        l=l+2;
-
-        vertice[i*(vertices.size()/3)+j][0]=coordenadaX;
-        vertice[i*(vertices.size()/3)+j][1]=coordenadaY;
-        vertice[i*(vertices.size()/3)+j][2]=coordenadaZ;
+        float coordenadaX=vertices_ply[j+contador]*sin(angulo);
+        float coordenadaY=vertices_ply[j+1+contador];
+        float coordenadaZ=vertices_ply[j+contador]*cos(angulo);
+        contador=contador+2;
+        //std::vector<float> new_vertice={coordenadaX,coordenadaY,coordenadaZ};
+        //vertices.push_back(new_vertice);
+        vertices[i*(vertices_ply.size()/3)+j][0]=coordenadaX;
+        vertices[i*(vertices_ply.size()/3)+j][1]=coordenadaY;
+        vertices[i*(vertices_ply.size()/3)+j][2]=coordenadaZ;
         
       }
     }
@@ -247,21 +235,23 @@ class SuperficieRevolucion:mallaVirtual
     
     int cara=0;
     for(int i=0;i<num_copias-1;i++){
-      for(int j=0;j<(vertices.size()/3)-1;j++){
-        int k = i*(vertices.size()/3) + j;
+      for(int j=0;j<(vertices_ply.size()/3)-1;j++){
+        int k = i*(vertices_ply.size()/3) + j;
         caras[cara][0]= k;
-        caras[cara][1]= k+(vertices.size()/3);
-        caras[cara][2]= k+(vertices.size()/3)+1;
+        caras[cara][1]= k+(vertices_ply.size()/3);
+        caras[cara][2]= k+(vertices_ply.size()/3)+1;
         cara++;
         caras[cara][0]= k;
-        caras[cara][1]= k+(vertices.size()/3)+1;
+        caras[cara][1]= k+(vertices_ply.size()/3)+1;
         caras[cara][2]= k+1;
         cara++;
       }
     }
 
     numero_triangulos=caras.size();
-    numero_vertices=vertice.size();
+    
+    numero_vertices=vertices.size();
+    std::cout<<"NUMERO CARASSSSSS: "<<numero_vertices<<std::endl;
 
     
 
@@ -279,12 +269,12 @@ void drawFLAT(void){
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
     glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
-    for(int l=0;l<3;l++){
-      int vertice_index = caras[i][l];
+    for(int j=0;j<3;j++){
+      int vertice_index = caras[i][j];
       
-        double coor1=vertice[vertice_index][0];
-        double coor2=vertice[vertice_index][1];
-        double coor3=vertice[vertice_index][2];
+        double coor1=vertices[vertice_index][0];
+        double coor2=vertices[vertice_index][1];
+        double coor3=vertices[vertice_index][2];
         
         glVertex3f(coor1,coor2,coor3);
       
@@ -303,12 +293,12 @@ void drawSMOOTH(void){
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
     glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
-    for(int l=0;l<3;l++){
-      int vertice_index = caras[i][l];
+    for(int j=0;j<3;j++){
+      int vertice_index = caras[i][j];
       
-        double coor1=vertice[vertice_index][0];
-        double coor2=vertice[vertice_index][1];
-        double coor3=vertice[vertice_index][2];
+        double coor1=vertices[vertice_index][0];
+        double coor2=vertices[vertice_index][1];
+        double coor3=vertices[vertice_index][2];
         glNormal3f(normal_vertice[vertice_index][0],normal_vertice[vertice_index][1],normal_vertice[vertice_index][2]);
         glVertex3f(coor1,coor2,coor3);
       
@@ -341,7 +331,7 @@ class CreadorMallas:mallaVirtual
 
     //Ajustamos el tamaño de cada uno
     caras.resize(caras_ply.size()/3,std::vector<int>(3));
-    vertice.resize(vertices_ply.size()/3,std::vector<float>(3));
+    vertices.resize(vertices_ply.size()/3,std::vector<float>(3));
     
     
     for(int i=0;i<caras_ply.size();i++){
@@ -356,7 +346,7 @@ class CreadorMallas:mallaVirtual
     }
     for(int j=0;j<vertices_ply.size();j++){
         
-        vertice[numero_vertices][varia]= vertices_ply[j];
+        vertices[numero_vertices][varia]= vertices_ply[j];
         varia++;
         if(varia==3){
           numero_vertices++;
@@ -379,12 +369,12 @@ void drawFLAT(void){
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
     glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
-    for(int l=0;l<3;l++){
-      int vertice_index = caras[i][l];
+    for(int j=0;j<3;j++){
+      int vertice_index = caras[i][j];
       
-        double coor1=vertice[vertice_index][0];
-        double coor2=vertice[vertice_index][1];
-        double coor3=vertice[vertice_index][2];
+        double coor1=vertices[vertice_index][0];
+        double coor2=vertices[vertice_index][1];
+        double coor3=vertices[vertice_index][2];
         
         glVertex3f(coor1,coor2,coor3);
       
@@ -402,12 +392,12 @@ void drawSMOOTH(void){
   //glDisable(GL_LIGHTING);
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
-    for(int l=0;l<3;l++){
-      int vertice_index = caras[i][l];
+    for(int j=0;j<3;j++){
+      int vertice_index = caras[i][j];
       
-        double coor1=vertice[vertice_index][0];
-        double coor2=vertice[vertice_index][1];
-        double coor3=vertice[vertice_index][2];
+        double coor1=vertices[vertice_index][0];
+        double coor2=vertices[vertice_index][1];
+        double coor3=vertices[vertice_index][2];
         glNormal3f(normal_vertice[vertice_index][0],normal_vertice[vertice_index][1],normal_vertice[vertice_index][2]);
         glVertex3f(coor1,coor2,coor3);
       
@@ -421,6 +411,8 @@ void drawSMOOTH(void){
 
 //Una funcion para dibujar caras planas y otra para lo otro
 };
+
+
 /**	void Dibuja( void )
 
 Procedimiento de dibujo del modelo. Es llamado por glut cada vez que se debe redibujar.
@@ -468,17 +460,30 @@ void Dibuja (void)
   SuperficieRevolucion alonsopep("lata-pinf.ply",70);
   alonsopep.drawSMOOTH();
   */
-glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color2);
- SuperficieRevolucion peon("perfil_cerrado.ply",70);
- peon.drawSMOOTH();
-  glTranslatef(10,0,0);
+ 
+  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color2);
+  SuperficieRevolucion peon("./Archivos.ply/perfil_cerrado.ply",68);
+  peon.drawSMOOTH();
+  glTranslatef(7,0,0);
   
   glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color3);
 
-  CreadorMallas creador("beethoven.ply");
-  creador.drawFLAT();
+  CreadorMallas creador("./Archivos.ply/beethoven.ply");
+  creador.drawSMOOTH();
+
+  glTranslatef(15,0,0);
+  
+  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
+
+  CreadorMallas big_dodge("./Archivos.ply/big_dodge.ply");
+  big_dodge.drawFLAT();
+
+  glTranslatef(15,0,0);
+  
+ 
 
   glPopMatrix ();		// Desapila la transformacion geometrica
+
 
 
   glutSwapBuffers ();		// Intercambia el buffer de dibujo y visualizacion
