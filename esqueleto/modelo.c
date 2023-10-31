@@ -81,6 +81,12 @@ void draw( )
 
 Ejes ejesCoordenadas;
 
+//Clase mallaVirtual en ella establecemos las estructuras de datos
+//que nos permitiran representar nuestra malla de triangulos y calcular su normal 
+//Metodos:
+//Contructor basico 
+//Funcion general de calculoNormales
+
 class mallaVirtual : Objeto3D
 {
   public:
@@ -121,7 +127,7 @@ class mallaVirtual : Objeto3D
         std::vector <float> vector1(3); 
         std::vector <float> vector2(3);
 
-        //Calculamos el vector
+        //Calculamos los vectores con los puntos p0,p1  p0,p2 
         for(int j=0;j<3;j++){
           vector1[j]= vertices[vertice2][j]-vertices[vertice1][j];
           vector2[j] = vertices[vertice3][j]-vertices[vertice1][j];
@@ -174,145 +180,8 @@ class mallaVirtual : Objeto3D
 };
 
 
-//Clase mallaVirtual
+//Clase CreadorMallas
 //En ella implementaremos el constructor para que el código sea orientado a objetos
-
-class SuperficieRevolucion:mallaVirtual
-{
-  std::vector <float> vertices_ply;
-  int num_copias=0;
-
-  public:
-  SuperficieRevolucion(char *nombre_archivo_pse,int numeroCopias){
-
-    //Comprobamos que el numero de copias sea mayor que 3
-    if(numeroCopias<=3)
-      exit;
-
-    num_copias=numeroCopias;
-    ply::read_vertices(nombre_archivo_pse,vertices_ply);
-
-    generarObjetoPorRevolucion();
-  }
-
-  void generarObjetoPorRevolucion(){
-
-    //Generamos en primer lugar la lista de vértices
-
-    //El perfil tiene m vertices dados de abajo hacia arriba
-    //De ese perfil generaremos m replicas rotadas=num_copias
-    //cada replica se denominara instancia de perfil
-    //num_copias>3
-    //cada instancia del perfil forma un angulo de 2pi/(n-1)rad con la siguiente o anterior
-
-    //Ajustamos el tamaño de cada uno
-    //ultimo vertice no se accede y num_copias no se accede a la ultima porque es igual q la primera
-    caras.resize((  (vertices_ply.size()/3-1)*(num_copias-1))*2,std::vector<int>(3));
-    vertices.resize((vertices_ply.size()/3)*num_copias,std::vector<float>(3));
-    
-    for(int i=0;i<num_copias;i++){
-      
-      int contador=0;
-      for(int j=0;j<vertices_ply.size()/3;j++){
-        float angulo = 2*M_PI*i / (num_copias-1);
-        
-        float coordenadaX=vertices_ply[j+contador]*sin(angulo);
-        float coordenadaY=vertices_ply[j+1+contador];
-        float coordenadaZ=vertices_ply[j+contador]*cos(angulo);
-        contador=contador+2;
-        //std::vector<float> new_vertice={coordenadaX,coordenadaY,coordenadaZ};
-        //vertices.push_back(new_vertice);
-        vertices[i*(vertices_ply.size()/3)+j][0]=coordenadaX;
-        vertices[i*(vertices_ply.size()/3)+j][1]=coordenadaY;
-        vertices[i*(vertices_ply.size()/3)+j][2]=coordenadaZ;
-        
-      }
-    }
-
-    //Ya tendriamos la lista de vertices almacenada en nuestra estructura de datos original
-
-    //Pasamos a la creacion de la lista de caras en nuestra estructura de datos original
-    
-    int cara=0;
-    for(int i=0;i<num_copias-1;i++){
-      for(int j=0;j<(vertices_ply.size()/3)-1;j++){
-        int k = i*(vertices_ply.size()/3) + j;
-        caras[cara][0]= k;
-        caras[cara][1]= k+(vertices_ply.size()/3);
-        caras[cara][2]= k+(vertices_ply.size()/3)+1;
-        cara++;
-        caras[cara][0]= k;
-        caras[cara][1]= k+(vertices_ply.size()/3)+1;
-        caras[cara][2]= k+1;
-        cara++;
-      }
-    }
-
-    numero_triangulos=caras.size();
-    
-    numero_vertices=vertices.size();
-    std::cout<<"NUMERO CARASSSSSS: "<<numero_vertices<<std::endl;
-
-    
-
-    calculoNormales();
-  }
-
-
-void draw(void){
-}  
-void drawFLAT(void){
-
-  glShadeModel(GL_FLAT);
-  
-  //glDisable(GL_LIGHTING);
-  glBegin(GL_TRIANGLES);  
-  for(int i=0;i<numero_triangulos;i++){
-    glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
-    for(int j=0;j<3;j++){
-      int vertice_index = caras[i][j];
-      
-        double coor1=vertices[vertice_index][0];
-        double coor2=vertices[vertice_index][1];
-        double coor3=vertices[vertice_index][2];
-        
-        glVertex3f(coor1,coor2,coor3);
-      
-
-    }
-  }  
-  glEnd();
-  glEnable (GL_LIGHTING);
-  //glEnable (GL_LIGHTING);
-}
-void drawSMOOTH(void){
-
-  glShadeModel(GL_SMOOTH);
-  
-  //glDisable(GL_LIGHTING);
-  glBegin(GL_TRIANGLES);  
-  for(int i=0;i<numero_triangulos;i++){
-    glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
-    for(int j=0;j<3;j++){
-      int vertice_index = caras[i][j];
-      
-        double coor1=vertices[vertice_index][0];
-        double coor2=vertices[vertice_index][1];
-        double coor3=vertices[vertice_index][2];
-        glNormal3f(normal_vertice[vertice_index][0],normal_vertice[vertice_index][1],normal_vertice[vertice_index][2]);
-        glVertex3f(coor1,coor2,coor3);
-      
-
-    }
-  }  
-  glEnd();
-  glEnable (GL_LIGHTING);
-  //glEnable (GL_LIGHTING);
-}
-
-
-};
-
 
 class CreadorMallas:mallaVirtual
 {
@@ -412,6 +281,142 @@ void drawSMOOTH(void){
 //Una funcion para dibujar caras planas y otra para lo otro
 };
 
+//Clase SuperficieRevolucion heredada de mallaVirtual nos permite
+//implementar el objeto de revolucion
+
+class SuperficieRevolucion:mallaVirtual
+{
+  std::vector <float> vertices_ply;
+  int num_copias=0;
+
+  public:
+  SuperficieRevolucion(char *nombre_archivo_pse,int numeroCopias){
+
+    //Comprobamos que el numero de copias sea mayor que 3
+    if(numeroCopias<=3)
+      exit;
+
+    num_copias=numeroCopias;
+    ply::read_vertices(nombre_archivo_pse,vertices_ply);
+
+    generarObjetoPorRevolucion();
+  }
+
+  void generarObjetoPorRevolucion(){
+
+    //Generamos en primer lugar la lista de vértices
+
+    //El perfil tiene m vertices dados de abajo hacia arriba
+    //De ese perfil generaremos m replicas rotadas=num_copias
+    //cada replica se denominara instancia de perfil
+    //num_copias>3
+    //cada instancia del perfil forma un angulo de 2pi/(n-1)rad con la siguiente o anterior
+
+    //Ajustamos el tamaño de cada uno
+    //ultimo vertice no se accede y num_copias no se accede a la ultima porque es igual q la primera
+    caras.resize((  (vertices_ply.size()/3-1)*(num_copias-1))*2,std::vector<int>(3));
+    vertices.resize((vertices_ply.size()/3)*num_copias,std::vector<float>(3));
+    
+    for(int i=0;i<num_copias;i++){
+      
+      int contador=0;
+      for(int j=0;j<vertices_ply.size()/3;j++){
+        float angulo = 2*M_PI*i / (num_copias-1);
+        
+        float coordenadaX=vertices_ply[j+contador]*sin(angulo);
+        float coordenadaY=vertices_ply[j+1+contador];
+        float coordenadaZ=vertices_ply[j+contador]*cos(angulo);
+        contador=contador+2;
+        
+        vertices[i*(vertices_ply.size()/3)+j][0]=coordenadaX;
+        vertices[i*(vertices_ply.size()/3)+j][1]=coordenadaY;
+        vertices[i*(vertices_ply.size()/3)+j][2]=coordenadaZ;
+        
+      }
+    }
+
+    //Ya tendriamos la lista de vertices almacenada en nuestra estructura de datos original
+
+    //Pasamos a la creacion de la lista de caras en nuestra estructura de datos original
+    
+    int cara=0;
+    for(int i=0;i<num_copias-1;i++){
+      for(int j=0;j<(vertices_ply.size()/3)-1;j++){
+        int k = i*(vertices_ply.size()/3) + j;
+        caras[cara][0]= k;
+        caras[cara][1]= k+(vertices_ply.size()/3);
+        caras[cara][2]= k+(vertices_ply.size()/3)+1;
+        cara++;
+        caras[cara][0]= k;
+        caras[cara][1]= k+(vertices_ply.size()/3)+1;
+        caras[cara][2]= k+1;
+        cara++;
+      }
+    }
+
+    numero_triangulos=caras.size();
+    
+    numero_vertices=vertices.size();
+    
+
+    
+
+    calculoNormales();
+  }
+
+
+void draw(void){
+}  
+void drawFLAT(void){
+
+  glShadeModel(GL_FLAT);
+  
+  glBegin(GL_TRIANGLES);  
+  for(int i=0;i<numero_triangulos;i++){
+    glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
+    for(int j=0;j<3;j++){
+      int vertice_index = caras[i][j];
+      
+        double coor1=vertices[vertice_index][0];
+        double coor2=vertices[vertice_index][1];
+        double coor3=vertices[vertice_index][2];
+        
+        glVertex3f(coor1,coor2,coor3);
+      
+
+    }
+  }  
+  glEnd();
+  glEnable (GL_LIGHTING);
+
+}
+void drawSMOOTH(void){
+
+  glShadeModel(GL_SMOOTH);
+  
+
+  glBegin(GL_TRIANGLES);  
+  for(int i=0;i<numero_triangulos;i++){
+    glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
+    for(int j=0;j<3;j++){
+      int vertice_index = caras[i][j];
+      
+        double coor1=vertices[vertice_index][0];
+        double coor2=vertices[vertice_index][1];
+        double coor3=vertices[vertice_index][2];
+        glNormal3f(normal_vertice[vertice_index][0],normal_vertice[vertice_index][1],normal_vertice[vertice_index][2]);
+        glVertex3f(coor1,coor2,coor3);
+      
+
+    }
+  }  
+  glEnd();
+  glEnable (GL_LIGHTING);
+
+}
+
+
+};
 
 /**	void Dibuja( void )
 
@@ -423,9 +428,9 @@ void Dibuja (void)
 {
   static GLfloat  pos[4] = { 5.0, 5.0, 10.0, 0.0 };	// Posicion de la fuente de luz
 
-  float  color[4] = { 1.0, 0.5, 0.0, 1.0 };
-  float  color2[4] = {1.0, 0.0, 0.0, 1.0 };
-  float color3[4] = {0.0, 1.0, 0.0, 1.0};
+  float  naranja[4] = { 1.0, 0.5, 0.0, 1.0 };
+  float  rojo[4] = {1.0, 0.0, 0.0, 1.0 };
+  float verde[4] = {0.0, 1.0, 0.0, 1.0};
 
   glPushMatrix ();		// Apila la transformacion geometrica actual
 
@@ -438,53 +443,30 @@ void Dibuja (void)
   glLightfv (GL_LIGHT0, GL_POSITION, pos);	// Declaracion de luz. Colocada aqui esta fija en la escena
 
   ejesCoordenadas.draw();			// Dibuja los ejes
-/*
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
-
-  // Dibuja el modelo (A rellenar en prácticas 1,2 y 3)          
-  
-  CreadorMallas alonso("big_dodge.ply");
-  alonso.drawFLAT();
-
-  glTranslatef(10,0,0);
-
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color2);
-  /*
-  SuperficieRevolucion lata("lata-pcue",70);
-  lata.drawSMOOTH();
-
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
-  SuperficieRevolucion alonsogod("lata-psup.ply",70);
-  alonsogod.drawSMOOTH();
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
-  SuperficieRevolucion alonsopep("lata-pinf.ply",70);
-  alonsopep.drawSMOOTH();
-  */
  
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color2);
-  SuperficieRevolucion peon("./Archivos.ply/perfil_cerrado.ply",67);
+  //Dibujamos el peon
+  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, rojo);
+  SuperficieRevolucion peon("./Archivos.ply/perfil.ply",67);
   peon.drawSMOOTH();
   glTranslatef(7,0,0);
   
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color3);
+  //Dibujamos beethoven
+  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, verde);
 
   CreadorMallas creador("./Archivos.ply/beethoven.ply");
   creador.drawSMOOTH();
 
   glTranslatef(15,0,0);
   
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
+  //Dibujamos coche
+  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, naranja);
 
   CreadorMallas big_dodge("./Archivos.ply/big_dodge.ply");
   big_dodge.drawFLAT();
 
   glTranslatef(15,0,0);
   
- 
-
   glPopMatrix ();		// Desapila la transformacion geometrica
-
-
 
   glutSwapBuffers ();		// Intercambia el buffer de dibujo y visualizacion
 }
