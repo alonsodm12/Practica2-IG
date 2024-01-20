@@ -663,6 +663,27 @@ Procedimiento de dibujo del modelo. Es llamado por glut cada vez que se debe red
 
 **/
 
+/**
+
+Definimos las objetos a crear en el draw
+
+**/
+
+  SuperficieRevolucion tapa_sup("./Archivos.ply/lata-psup.ply",12);
+  SuperficieRevolucion lata("./Archivos.ply/lata-pcue.ply",60);
+  
+  SuperficieRevolucion tapa_inf("./Archivos.ply/lata-pinf.ply",12);
+  
+  Cubo cubo(0.5);
+  
+  CreadorMallas pie("./Archivos.ply/footbones.ply");
+
+  CreadorMallas pie2("./Archivos.ply/footbones.ply");
+  
+  CreadorMallas pie3("./Archivos.ply/footbones.ply");
+  
+  CreadorMallas pie4("./Archivos.ply/footbones.ply");
+  
 void Dibuja (void)
 {
   static GLfloat  pos[4] = { 5.0, 5.0, 10.0, 0.0 };	// Posicion de la fuente de luz
@@ -722,9 +743,10 @@ void Dibuja (void)
 
   glEnable(GL_TEXTURE_2D);
   glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,blanco);
-  Cubo cubo(0.5);
+
   cubo.asignarTexturaArchivo("./Archivos.ply/dado.jpg");
   cubo.draw();
+  
   glDisable(GL_TEXTURE_2D);
   
   glTranslatef(2,0,0);
@@ -732,10 +754,10 @@ void Dibuja (void)
   //////////////////////////////////////////////////////////////////////
   //REPRESENTAMOS LATA
   //////////////////////////////////////////////////////////////////////
-  SuperficieRevolucion tapa_sup("./Archivos.ply/lata-psup.ply",12);
-  tapa_sup.drawSMOOTH();
-  SuperficieRevolucion lata("./Archivos.ply/lata-pcue.ply",60);
+  
   lata.asignarTexturaArchivo("./Archivos.ply/alhambra.jpg");
+  tapa_sup.drawSMOOTH();
+
 
   //////////////////////////////////////////////////////////////////
   //REFLECTIVIDAD DIFUSA + AMBIENTAL + ESPECULAR
@@ -748,12 +770,11 @@ void Dibuja (void)
 
   lata.drawSMOOTH();
 
-  SuperficieRevolucion tapa_inf("./Archivos.ply/lata-pinf.ply",12);
+
   tapa_inf.drawSMOOTH();
 
   
   glTranslatef(7,0,0);
-  CreadorMallas pie("./Archivos.ply/footbones.ply");
 
   ///////////////////////////////////////////////////////////////////
   //MATERIAL AMBIENTAL
@@ -773,7 +794,6 @@ void Dibuja (void)
   //MATERIAL DIFUSO + AMBIENTAL
   //////////////////////////////////////////////////////////////////
 
-  CreadorMallas pie2("./Archivos.ply/footbones.ply");
   pie2.setReflectividad_ambiente(1.0, 1.0, 1.0, 1.0);
   pie2.setReflectividad_difusa(1.0, 1.0, 1.0, 1.0);
   pie2.setReflectividad_especular(0.0, 0.0, 0.0, 1.0);
@@ -788,7 +808,6 @@ void Dibuja (void)
   //MATERIAL ESPECULAR
   //////////////////////////////////////////////////////////////////
 
-  CreadorMallas pie3("./Archivos.ply/footbones.ply");
   pie3.setReflectividad_ambiente(0,0,0, 1.0);
   pie3.setReflectividad_difusa(0.0, 0.0, 0.0, 1.0);
   pie3.setReflectividad_especular(1, 1, 1, 1.0);
@@ -802,12 +821,11 @@ void Dibuja (void)
   //MATERIAL COMBINADO AMBIENTAL + DIFUSA + ESPECULAR
   //////////////////////////////////////////////////////////////////
   
-  CreadorMallas pie4("./Archivos.ply/footbones.ply");
   pie4.setReflectividad_ambiente(1.0, 1, 1.0, 1.0);
   pie4.setReflectividad_difusa(1.0, 1, 1.0, 1.0);
   pie4.setReflectividad_especular(1, 1, 1, 1.0);
   pie4.setBrillo(5);
-
+  
   pie4.drawSMOOTH();
 
   glDisable(GL_LIGHTING);
