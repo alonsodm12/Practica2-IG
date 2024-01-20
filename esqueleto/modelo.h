@@ -42,13 +42,14 @@ void idle (int v);
 **/
 void initModel ();
 
-
+void setLuz(int luz);
 
 class Objeto3D 
 { 
 public: 
-
+GLuint texId;
 virtual void draw( ) = 0; // Dibuja el objeto
+void asignarTexturaArchivo(const char * nombre_arch);
 } ; 
 
 struct Vertice

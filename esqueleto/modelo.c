@@ -29,13 +29,15 @@ modulo modelo.c
     Función Idle
 
 */
-
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <GL/glut.h>		// Libreria de utilidades de OpenGL
 #include "practicasIG.h"
+#include "lector-jpg.h"
+
+using namespace std;
 
 /**	void initModel()
 
@@ -43,12 +45,125 @@ Inicializa el modelo y de las variables globales
 
 
 **/
-void
-initModel ()
-{
+
+unsigned ancho=0;
+unsigned alto=0;
+
+int luzControl2=0;
+int luzControl=0;
+
+bool noUsaAmbiente=true;
+
+//Funcion para controlar las luces
+void setLuz(int luz){
+  if(luz==1){
+    if(luzControl==0){
+      luzControl=1;
+      glEnable(GL_LIGHT0);
+    }  
+    else{  
+      luzControl=0;
+      glDisable(GL_LIGHT0);
+    }  
+  }
+  if(luz==2){
+    if(luzControl2==0){
+      luzControl2=1;
+      glEnable(GL_LIGHT1);
+    }  
+    else{ 
+      luzControl2=0;
+      glDisable(GL_LIGHT1);
+    }  
+  }
 
 }
 
+void
+initModel ()
+{
+}
+
+//Funcion que nos permite asignar una textura procedente de un archivo
+void Objeto3D::asignarTexturaArchivo(const char * nombre_arch){
+
+  unsigned char * imagen = LeerArchivoJPEG(nombre_arch,ancho,alto);
+  glGenTextures(1,&texId);
+  glBindTexture(GL_TEXTURE_2D, texId);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+   // Especifica el formato de la textura
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ancho, alto, 0, GL_RGB, GL_UNSIGNED_BYTE, imagen);
+
+    // Libera la memoria de la imagen después de cargarla en la textura
+    free(imagen);
+}
+
+
+//Clase cubo
+//
+//Nos permitirá crear un cubo sobre el que aplicaremos la textura del dado
+//
+class Cubo : public Objeto3D {
+private:
+    float lado;
+public:
+    Cubo(float lado) : lado(lado) {}
+
+void draw() {
+    
+    
+    glBegin(GL_QUADS);
+
+    // Cara frontal
+    glNormal3f (0.0, 0.0, 1.0); 
+    glTexCoord2f(0.5,0.5); glVertex3f(-lado, -lado, lado);
+    glTexCoord2f(0.75,0.5); glVertex3f(lado, -lado, lado);
+    glTexCoord2f(0.75,0.75); glVertex3f(lado,lado, lado);
+    glTexCoord2f(0.5,0.75); glVertex3f(-lado, lado, lado);
+
+    // Cara posterior
+    glNormal3f (0.0, 0.0, -1.0);
+    glTexCoord2f(0.5,0.25); glVertex3f(lado, -lado, -lado);
+    glTexCoord2f(0.75,0.25); glVertex3f(-lado, -lado, -lado);
+    glTexCoord2f(0.75,0.5); glVertex3f(-lado, lado, -lado);
+   glTexCoord2f(0.5,0.5); glVertex3f(lado, lado, -lado);
+
+    // Cara superior
+    glNormal3f (0.0, 1.0, 0.0);
+    glTexCoord2f(0.25,0.5); glVertex3f(-lado, lado, lado);
+    glTexCoord2f(0.5,0.5); glVertex3f(lado, lado, lado);
+    glTexCoord2f(0.5,0.75); glVertex3f(lado, lado, -lado);
+    glTexCoord2f(0.25,0.75); glVertex3f(-lado, lado, -lado);
+    
+    // Cara inferior
+    glNormal3f (0.0, -1.0, 0.0);
+    glTexCoord2f(0.0, 0.500); glVertex3f(-lado, -lado, lado);
+    glTexCoord2f(0.25, 0.500); glVertex3f(-lado, -lado, -lado);
+    glTexCoord2f(0.25, 0.75); glVertex3f(lado, -lado, -lado);
+    glTexCoord2f(0.0, 0.75); glVertex3f(lado, -lado, lado);
+
+    // Cara derecha
+    glNormal3f (1.0, 0.0, 0.0);
+    glTexCoord2f(0.75,0.5); glVertex3f(lado, -lado, lado);
+    glTexCoord2f(1,0.5); glVertex3f(lado, -lado, -lado);
+    glTexCoord2f(1,0.75); glVertex3f(lado, lado, -lado);
+    glTexCoord2f(0.75,0.75); glVertex3f(lado, lado, lado);
+
+    // Cara izquierda
+    glNormal3f (-1.0, 0.0, 0.0);
+    glTexCoord2f(0.5, 0.75); glVertex3f(-lado, -lado, -lado);
+    glTexCoord2f(0.75, 0.75); glVertex3f(-lado, -lado, lado);
+    glTexCoord2f(0.75, 1); glVertex3f(-lado, lado, lado);
+    glTexCoord2f(0.5, 1); glVertex3f(-lado, lado, -lado);
+
+    glEnd();
+}
+};
 
 
 class Ejes:Objeto3D 
@@ -87,22 +202,73 @@ Ejes ejesCoordenadas;
 //Contructor basico 
 //Funcion general de calculoNormales
 
-class mallaVirtual : Objeto3D
+class mallaVirtual : public Objeto3D
 {
   public:
+    
     int numero_vertices;
     int numero_triangulos;
+    GLfloat reflectividad_difusa[4];
+    GLfloat reflectividad_especular[4];
+    GLfloat reflectividad_ambiente[4];
+    GLfloat brillo;
+    
+
     std::vector < std::vector<float> >vertices;
     std::vector < std::vector<int> >caras;
     std::vector <std::vector<float>> normal_vertice;
     std::vector <std::vector<float>> normal_cara;
+    std::vector <std::pair<float,float>> coordenadas_textura;
 
-
+  public :
   mallaVirtual(){
+    GLfloat valor_por_defecto[4]={0.2,0.2,0.2,1.0};
     numero_vertices=0;
     numero_triangulos=0;
-    
+    for (int i = 0; i < 4; ++i) {
+      reflectividad_difusa[i] = valor_por_defecto[i];
+      reflectividad_especular[i] = valor_por_defecto[i];
+      reflectividad_ambiente[i] = valor_por_defecto[i];
+    }
   }
+
+  void asignarMaterial(){
+    if(noUsaAmbiente)    
+      glMaterialfv(GL_FRONT,GL_AMBIENT,reflectividad_difusa);
+    else
+       glMaterialfv(GL_FRONT,GL_AMBIENT,reflectividad_ambiente); 
+    glMaterialfv(GL_FRONT,GL_SPECULAR,reflectividad_especular);
+    glMaterialfv(GL_FRONT,GL_DIFFUSE,reflectividad_difusa);
+    glMaterialf( GL_FRONT, GL_SHININESS, brillo) ;
+  }
+
+  void setReflectividad_difusa(float r,float g, float b,float a){
+    
+    reflectividad_difusa[0]=r;
+    reflectividad_difusa[1]=g;
+    reflectividad_difusa[2]=b;
+    reflectividad_difusa[3]=a;
+  }
+
+  void setReflectividad_especular(float r,float g, float b,float a){
+    
+    reflectividad_especular[0]=r;
+    reflectividad_especular[1]=g;
+    reflectividad_especular[2]=b;
+    reflectividad_especular[3]=a;
+  }
+
+  void setReflectividad_ambiente(float r,float g, float b,float a){
+    reflectividad_ambiente[0]=r;
+    reflectividad_ambiente[1]=g;
+    reflectividad_ambiente[2]=b;
+    reflectividad_ambiente[3]=a;
+    noUsaAmbiente=false;
+  }
+  void setBrillo(float e){
+    brillo=e;
+  }
+
 
   //Funcion que calcula las normales de cara y vértices
   //La introducimos en la clase general mallaVirtual ya que vamos a tener
@@ -183,7 +349,7 @@ class mallaVirtual : Objeto3D
 //Clase CreadorMallas
 //En ella implementaremos el constructor para que el código sea orientado a objetos
 
-class CreadorMallas:mallaVirtual
+class CreadorMallas: public mallaVirtual
 {
   std::vector < float >vertices_ply;
   std::vector < int >caras_ply;
@@ -222,19 +388,25 @@ class CreadorMallas:mallaVirtual
           varia=0;
         }
     }
-  std::cout<<"Numero de caras: "<<caras_ply.size()<<std::endl; 
-  std::cout<<"Numero de vertices: "<<numero_vertices<<std::endl;
   calculoNormales();
-    
-    
+       
   }
+
 void draw(void){
 }  
 void drawFLAT(void){
 
+  if(texId!=0){
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,texId);
+
+  }
+
+
   glShadeModel(GL_FLAT);
+
+  asignarMaterial();
   
-  //glDisable(GL_LIGHTING);
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
     glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
@@ -250,15 +422,18 @@ void drawFLAT(void){
 
     }
   }  
-  glEnd();
-  //glEnable (GL_LIGHTING);
-  //glEnable (GL_LIGHTING);
+  glEnd();  
+  if (texId!=0) {
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+  }
 }
 void drawSMOOTH(void){
 
   glShadeModel(GL_SMOOTH);
   
-  //glDisable(GL_LIGHTING);
+  asignarMaterial();
+  
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
     for(int j=0;j<3;j++){
@@ -274,8 +449,7 @@ void drawSMOOTH(void){
     }
   }  
   glEnd();
-  glEnable (GL_LIGHTING);
-  //glEnable (GL_LIGHTING);
+  
 }
 
 //Una funcion para dibujar caras planas y otra para lo otro
@@ -284,7 +458,7 @@ void drawSMOOTH(void){
 //Clase SuperficieRevolucion heredada de mallaVirtual nos permite
 //implementar el objeto de revolucion
 
-class SuperficieRevolucion:mallaVirtual
+class SuperficieRevolucion:public mallaVirtual
 {
   std::vector <float> vertices_ply;
   int num_copias=0;
@@ -294,7 +468,7 @@ class SuperficieRevolucion:mallaVirtual
 
     //Comprobamos que el numero de copias sea mayor que 3
     if(numeroCopias<=3)
-      exit;
+      exit(1);
 
     num_copias=numeroCopias;
     ply::read_vertices(nombre_archivo_pse,vertices_ply);
@@ -314,8 +488,9 @@ class SuperficieRevolucion:mallaVirtual
 
     //Ajustamos el tamaño de cada uno
     //ultimo vertice no se accede y num_copias no se accede a la ultima porque es igual q la primera
-    caras.resize((  (vertices_ply.size()/3-1)*(num_copias-1))*2,std::vector<int>(3));
-    vertices.resize((vertices_ply.size()/3)*num_copias,std::vector<float>(3));
+    caras.resize(((vertices_ply.size()/3-1)*(num_copias-1))*2,std::vector<int>(3));
+    vertices.resize((vertices_ply.size()/3)*num_copias, std::vector<float>(3));
+    
     
     for(int i=0;i<num_copias;i++){
       
@@ -359,42 +534,99 @@ class SuperficieRevolucion:mallaVirtual
     numero_vertices=vertices.size();
     
 
-    
+    TexturasRevolucion();
 
     calculoNormales();
   }
+
+
+void TexturasRevolucion(){
+    
+  float altura_maxima=0;
+  float altura_minima=0;
+
+
+  // Encuentra las alturas mínima y máxima
+  for (int i = 0; i < vertices.size(); i++) {
+      float altura_actual = vertices[i][1];  // Asumiendo que la altura está en la coordenada y
+
+      if (altura_actual < altura_minima) {
+          altura_minima = altura_actual;
+      }
+
+      if (altura_actual > altura_maxima) {
+          altura_maxima = altura_actual;
+      }
+  }
+
+
+  // Calcula las coordenadas de textura
+  for (int i = 0; i < vertices.size(); i++) {
+      float alfa = atan2(vertices[i][2], vertices[i][0]);
+      float h = vertices[i][1];
+
+      float u = 1-(alfa / (2 * M_PI) +0.5);
+      float v = (h - altura_minima) / (altura_maxima - altura_minima);
+
+      coordenadas_textura.push_back({u, v});
+  }
+
+}
 
 
 void draw(void){
 }  
 void drawFLAT(void){
 
+
+  if(texId!=0){
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,texId);
+  }
+
   glShadeModel(GL_FLAT);
+
+  //Asignamos materiales
+  
+  asignarMaterial();
   
   glBegin(GL_TRIANGLES);  
+
   for(int i=0;i<numero_triangulos;i++){
     glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
     for(int j=0;j<3;j++){
+      
       int vertice_index = caras[i][j];
       
         double coor1=vertices[vertice_index][0];
         double coor2=vertices[vertice_index][1];
         double coor3=vertices[vertice_index][2];
         
-        glVertex3f(coor1,coor2,coor3);
-      
-
+        if(texId!=0){
+          glTexCoord2f(coordenadas_textura[vertice_index].first,coordenadas_textura[vertice_index].second);
+        }      
+        glVertex3f(coor1,coor2,coor3);    
     }
   }  
   glEnd();
-  glEnable (GL_LIGHTING);
+   
+  if (texId!=0) {
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+  }
+  
 
 }
 void drawSMOOTH(void){
 
+
+  if(texId!=0){
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D,texId);
+  }
   glShadeModel(GL_SMOOTH);
   
-
+  asignarMaterial();
   glBegin(GL_TRIANGLES);  
   for(int i=0;i<numero_triangulos;i++){
     glNormal3f(normal_cara[i][0],normal_cara[i][1],normal_cara[i][2]);
@@ -405,13 +637,20 @@ void drawSMOOTH(void){
         double coor2=vertices[vertice_index][1];
         double coor3=vertices[vertice_index][2];
         glNormal3f(normal_vertice[vertice_index][0],normal_vertice[vertice_index][1],normal_vertice[vertice_index][2]);
+        if(texId!=0){
+          glTexCoord2f(coordenadas_textura[vertice_index].first,coordenadas_textura[vertice_index].second);
+        }    
         glVertex3f(coor1,coor2,coor3);
       
 
     }
   }  
   glEnd();
-  glEnable (GL_LIGHTING);
+    if (texId!=0) {
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
+  }
+  
 
 }
 
@@ -430,7 +669,8 @@ void Dibuja (void)
 
   float  naranja[4] = { 1.0, 0.5, 0.0, 1.0 };
   float  rojo[4] = {1.0, 0.0, 0.0, 1.0 };
-  float verde[4] = {0.0, 1.0, 0.0, 1.0};
+  float blanco[4] = {1.0, 1.0, 1.0, 1.0};
+
 
   glPushMatrix ();		// Apila la transformacion geometrica actual
 
@@ -439,33 +679,138 @@ void Dibuja (void)
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Inicializa el buffer de color y el Z-Buffer
 
   transformacionVisualizacion ();	// Carga transformacion de visualizacion
+  glEnable(GL_LIGHTING);
 
-  glLightfv (GL_LIGHT0, GL_POSITION, pos);	// Declaracion de luz. Colocada aqui esta fija en la escena
+  ////////////////////////////////////////////////////////////////////////
+  //LUCES 
+  ////////////////////////////////////////////////////////////////////////
+  
+  ////////////////////////////////////////////////////////////////////////
+  //DEFINIMOS LUZ 1
+  ////////////////////////////////////////////////////////////////////////
+  GLfloat luz_ambiente1[] = { 0.2, 0.2, 0.2, 1.0 };
+  GLfloat luz_difusa1[] = {1.0, 1.0, 0.0, 1.0};
+  GLfloat luz_posicion1[] = {-50, 50, 100, 1.0};
+  GLfloat luz_especular1[] = {1,1, 1, 1.0};
+  ////////////////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////////////////
+  //DEFINIMOS LUZ 2
+  ////////////////////////////////////////////////////////////////////////
+  GLfloat luz_ambiente2[4] = {0.5, 1, 1, 1.0};
+  GLfloat luz_especular2[4] = {0.5, 1, 1,1.0};
+  GLfloat luz_posicion2[4] = {50, 50, -100, 1};
+  
+  //LUZ DIFUSA + AMBIENTE + ESPECULAR (COMBINACIÓN DE LOS TRES TIPOS)
+  glLightfv(GL_LIGHT0,GL_AMBIENT,luz_ambiente1);
+  glLightfv(GL_LIGHT0,GL_DIFFUSE,luz_difusa1);
+  glLightfv (GL_LIGHT0, GL_SPECULAR, luz_especular1);
+  glLightfv (GL_LIGHT0, GL_POSITION, luz_posicion1);
+
+
+  //LUZ ESPECULAR + AMBIENTE
+  glLightfv (GL_LIGHT1, GL_AMBIENT, luz_ambiente2);
+  glLightfv (GL_LIGHT1, GL_SPECULAR, luz_especular2);
+  glLightfv (GL_LIGHT1, GL_POSITION, luz_posicion2);
+
+  
   ejesCoordenadas.draw();			// Dibuja los ejes
- 
-  //Dibujamos el peon
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, rojo);
-  SuperficieRevolucion peon("./Archivos.ply/perfil.ply",67);
-  peon.drawSMOOTH();
+  
+  //////////////////////////////////////////////////////////////////////
+  //REPRESENTAMOS CUBO
+  //////////////////////////////////////////////////////////////////////
+
+  glEnable(GL_TEXTURE_2D);
+  glMaterialfv(GL_FRONT,GL_AMBIENT_AND_DIFFUSE,blanco);
+  Cubo cubo(0.5);
+  cubo.asignarTexturaArchivo("./Archivos.ply/dado.jpg");
+  cubo.draw();
+  glDisable(GL_TEXTURE_2D);
+  
+  glTranslatef(2,0,0);
+  
+  //////////////////////////////////////////////////////////////////////
+  //REPRESENTAMOS LATA
+  //////////////////////////////////////////////////////////////////////
+  SuperficieRevolucion tapa_sup("./Archivos.ply/lata-psup.ply",12);
+  tapa_sup.drawSMOOTH();
+  SuperficieRevolucion lata("./Archivos.ply/lata-pcue.ply",60);
+  lata.asignarTexturaArchivo("./Archivos.ply/alhambra.jpg");
+
+  //////////////////////////////////////////////////////////////////
+  //REFLECTIVIDAD DIFUSA + AMBIENTAL + ESPECULAR
+  //////////////////////////////////////////////////////////////////
+
+  lata.setReflectividad_ambiente(1.0,1.0, 1.0, 1.0);
+  lata.setReflectividad_difusa(1.0, 1.0, 1.0, 1.0);
+  lata.setReflectividad_especular(1, 1, 1, 1.0);
+  lata.setBrillo(5);
+
+  lata.drawSMOOTH();
+
+  SuperficieRevolucion tapa_inf("./Archivos.ply/lata-pinf.ply",12);
+  tapa_inf.drawSMOOTH();
+
+  
   glTranslatef(7,0,0);
+  CreadorMallas pie("./Archivos.ply/footbones.ply");
+
+  ///////////////////////////////////////////////////////////////////
+  //MATERIAL AMBIENTAL
+  //////////////////////////////////////////////////////////////////
+
+  pie.setReflectividad_ambiente(1.0, 1.0,1.0, 1.0);
+  pie.setReflectividad_difusa(0.0, 0.0, 0.0, 1.0);
+  pie.setReflectividad_especular(0.0, 0.0, 0.0, 1.0);
+  pie.setBrillo(0);
+
+  pie.drawSMOOTH();
+
   
-  //Dibujamos beethoven
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, verde);
+  glTranslatef(12,0,0);
 
-  CreadorMallas creador("./Archivos.ply/beethoven.ply");
-  creador.drawSMOOTH();
+  ///////////////////////////////////////////////////////////////////
+  //MATERIAL DIFUSO + AMBIENTAL
+  //////////////////////////////////////////////////////////////////
 
-  glTranslatef(15,0,0);
+  CreadorMallas pie2("./Archivos.ply/footbones.ply");
+  pie2.setReflectividad_ambiente(1.0, 1.0, 1.0, 1.0);
+  pie2.setReflectividad_difusa(1.0, 1.0, 1.0, 1.0);
+  pie2.setReflectividad_especular(0.0, 0.0, 0.0, 1.0);
+  pie2.setBrillo(0);
+
+  pie2.drawSMOOTH();
+
+
+  glTranslatef(12,0,0);
+
+  ///////////////////////////////////////////////////////////////////
+  //MATERIAL ESPECULAR
+  //////////////////////////////////////////////////////////////////
+
+  CreadorMallas pie3("./Archivos.ply/footbones.ply");
+  pie3.setReflectividad_ambiente(0,0,0, 1.0);
+  pie3.setReflectividad_difusa(0.0, 0.0, 0.0, 1.0);
+  pie3.setReflectividad_especular(1, 1, 1, 1.0);
+  pie3.setBrillo(5);
+
+  pie3.drawSMOOTH();
+
+  glTranslatef(12,0,0);
+
+  ///////////////////////////////////////////////////////////////////
+  //MATERIAL COMBINADO AMBIENTAL + DIFUSA + ESPECULAR
+  //////////////////////////////////////////////////////////////////
   
-  //Dibujamos coche
-  glMaterialfv (GL_FRONT, GL_AMBIENT_AND_DIFFUSE, naranja);
+  CreadorMallas pie4("./Archivos.ply/footbones.ply");
+  pie4.setReflectividad_ambiente(1.0, 1, 1.0, 1.0);
+  pie4.setReflectividad_difusa(1.0, 1, 1.0, 1.0);
+  pie4.setReflectividad_especular(1, 1, 1, 1.0);
+  pie4.setBrillo(5);
 
-  CreadorMallas big_dodge("./Archivos.ply/big_dodge.ply");
-  big_dodge.drawFLAT();
+  pie4.drawSMOOTH();
 
-  glTranslatef(15,0,0);
-  
+  glDisable(GL_LIGHTING);
   glPopMatrix ();		// Desapila la transformacion geometrica
 
   glutSwapBuffers ();		// Intercambia el buffer de dibujo y visualizacion

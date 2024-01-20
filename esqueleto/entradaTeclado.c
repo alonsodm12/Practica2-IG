@@ -82,7 +82,6 @@ y:
 float rotxCamara = 30, rotyCamara = 45;
 float dCamara = 10;
 
-
 void letra (unsigned char k, int x, int y)
 {
 
@@ -97,6 +96,12 @@ void letra (unsigned char k, int x, int y)
       break;
     case '-':			// aleja la cámara
       dCamara += 5.0;
+      break;
+    case '1':
+      setLuz(1);
+      break;
+    case '2':
+      setLuz(2);
       break;
     case 27:			// Escape  Terminar
       exit (0);
